@@ -9,6 +9,7 @@ import { listenEsc, log } from '@/util/util'
 
 import { getLogseqApiConfig } from './Agenda3/helpers/logseq'
 import { track } from './Agenda3/helpers/umami'
+import { renderAgendaRoute } from './Agenda3/route'
 import Agenda3App from './apps/Agenda3App'
 import './style/index.less'
 
@@ -48,7 +49,7 @@ if (import.meta.env.VITE_MODE === 'web') {
     logseq.provideStyle(LOGSEQ_PROVIDE_COMMON_STYLE)
     Notification.requestPermission()
 
-    const showAgenda3 = () => {
+    const showAgendaOverlay = () => {
       track('Show Agenda', { version: __APP_VERSION__ })
       if (window.isMounted !== true) {
         renderApp()
@@ -57,9 +58,38 @@ if (import.meta.env.VITE_MODE === 'web') {
       logseq.showMainUI()
     }
 
+    let routeRendererAvailable = false
+    try {
+      const registerRouteRenderer = logseq.Experiments?.registerRouteRenderer
+      if (typeof registerRouteRenderer === 'function') {
+        const unregister = registerRouteRenderer.call(logseq.Experiments, 'agenda-main-route', {
+          path: '/agenda',
+          name: 'agenda-main-route',
+          render: renderAgendaRoute,
+        })
+        routeRendererAvailable = typeof unregister === 'function'
+      }
+    } catch (error) {
+      console.error('Failed to register the experimental Agenda route', error)
+    }
+
+    const showAgenda3 = () => {
+      track('Show Agenda', { version: __APP_VERSION__ })
+      if (routeRendererAvailable) {
+        logseq.App.pushState('agenda-main-route')
+      } else {
+        void logseq.UI.showMsg(
+          'The Agenda main-content route is unavailable in this Logseq version. Opening the plugin window instead.',
+          'warning',
+        )
+        showAgendaOverlay()
+      }
+    }
+
     // ===== logseq plugin model start =====
     logseq.provideModel({
       showAgenda3,
+      showAgendaOverlay,
       hide() {
         logseq.hideMainUI()
       },
@@ -74,14 +104,19 @@ if (import.meta.env.VITE_MODE === 'web') {
     logseq.App.registerCommandPalette(
       {
         key: 'Agenda:show',
-        label: 'Show Agenda',
+        label: 'Open Agenda',
         keybinding: {
           binding: 'ctrl+shift+s',
         },
       },
-      (data) => {
-        showAgenda3()
+      showAgenda3,
+    )
+    logseq.App.registerCommandPalette(
+      {
+        key: 'Agenda:show-overlay',
+        label: 'Open Agenda in plugin window',
       },
+      showAgendaOverlay,
     )
     // ========== show or hide app end =========
   })

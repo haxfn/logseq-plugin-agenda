@@ -19,7 +19,7 @@ import CalendarOperation, { CALENDAR_VIEWS, type CalendarView } from './calendar
 import KanBan, { type KanBanHandle } from './kanban/KanBan'
 import SettingsModal from './modals/SettingsModal'
 
-const MultipleView = ({ className }: { className?: string }) => {
+const MultipleView = ({ className, embedded = false }: { className?: string; embedded?: boolean }) => {
   const { t } = useTranslation()
   const kanbanRef = useRef<KanBanHandle>(null)
   const calendarRef = useRef<CalendarHandle>(null)
@@ -195,7 +195,7 @@ const MultipleView = ({ className }: { className?: string }) => {
           <SettingsModal initialTab="general">
             <FiSettings className="cursor-pointer text-lg" onClick={() => track('Settings Button')} />
           </SettingsModal>
-          {import.meta.env.VITE_MODE === 'plugin' ? (
+          {import.meta.env.VITE_MODE === 'plugin' && !embedded ? (
             <FiXCircle className="cursor-pointer text-lg" onClick={() => logseq.hideMainUI()} />
           ) : null}
         </div>

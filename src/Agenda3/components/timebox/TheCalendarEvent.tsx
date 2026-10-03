@@ -1,10 +1,14 @@
 import type { EventContentArg } from '@fullcalendar/core'
 import { Dropdown } from 'antd'
 import dayjs from 'dayjs'
+import { useAtomValue } from 'jotai'
+import { useState } from 'react'
 import { IoIosCheckmarkCircle } from 'react-icons/io'
 import { RiDeleteBin4Line, RiInboxUnarchiveLine } from 'react-icons/ri'
 
+import { navToLogseqBlock } from '@/Agenda3/helpers/logseq'
 import useAgendaEntities from '@/Agenda3/hooks/useAgendaEntities'
+import { logseqAtom } from '@/Agenda3/models/logseq'
 import type { AgendaEntity } from '@/types/entity'
 import type { AgendaTaskWithStart } from '@/types/task'
 import { cn } from '@/util/util'
@@ -13,7 +17,9 @@ import MathText from '../MathText'
 import TaskModal from '../modals/TaskModal'
 
 const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
+  const currentGraph = useAtomValue(logseqAtom).currentGraph
   const { updateEntity, deleteEntity } = useAgendaEntities()
+  const [editOpen, setEditOpen] = useState(false)
   const onDeleteTask = async (taskId: string) => {
     deleteEntity(taskId)
   }
@@ -34,16 +40,15 @@ const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
   const isSmallHeight = info.event.allDay === false && dayjs(info.event.end).diff(info.event.start, 'minute') <= 10
   const isDone = taskData?.status === 'done'
   return (
-    <TaskModal
-      info={{
-        type: 'edit',
-        initialTaskData: taskData as AgendaTaskWithStart,
-      }}
-    >
+    <>
       <Dropdown
         trigger={['contextMenu']}
         menu={{
           items: [
+            {
+              key: 'plan',
+              label: 'Plan task',
+            },
             {
               key: 'remove',
               label: 'Remove from timebox',
@@ -57,12 +62,16 @@ const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
             },
           ],
           onClick: ({ key }) => {
+            if (key === 'plan') setEditOpen(true)
             if (key === 'delete') onDeleteTask(info.event.id)
             if (key === 'remove') onRemoveTime(info)
           },
         }}
       >
-        <div className={cn('h-full', { 'opacity-60': isDone })}>
+        <div
+          className={cn('h-full', { 'opacity-60': isDone })}
+          onClick={() => navToLogseqBlock(taskData as AgendaTaskWithStart, currentGraph)}
+        >
           <div
             className={cn('relative flex items-center truncate', {
               'line-through': isDone,
@@ -77,7 +86,17 @@ const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
           {isShowTimeText ? <div className="text-xs text-gray-100">{info.timeText}</div> : null}
         </div>
       </Dropdown>
-    </TaskModal>
+      <TaskModal
+        open={editOpen}
+        info={{
+          type: 'edit',
+          initialTaskData: taskData as AgendaTaskWithStart,
+        }}
+        onOk={() => setEditOpen(false)}
+        onCancel={() => setEditOpen(false)}
+        onDelete={() => setEditOpen(false)}
+      />
+    </>
   )
 }
 

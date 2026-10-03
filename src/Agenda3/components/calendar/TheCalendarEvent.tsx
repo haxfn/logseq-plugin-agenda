@@ -2,14 +2,22 @@ import type { EventContentArg } from '@fullcalendar/core'
 import dayjs from 'dayjs'
 import type { CSSProperties } from 'react'
 import { CgSandClock } from 'react-icons/cg'
+import { FiEdit2 } from 'react-icons/fi'
 import { IoIosCheckmarkCircle } from 'react-icons/io'
 
 import { getDaysBetween } from '@/Agenda3/helpers/util'
+import type { AgendaTaskWithStartOrDeadline } from '@/types/task'
 import { cn } from '@/util/util'
 
 import MathText from '../MathText'
 
-const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
+const TheCalendarEvent = ({
+  info,
+  onEditTask,
+}: {
+  info: EventContentArg
+  onEditTask?: (task: AgendaTaskWithStartOrDeadline) => void
+}) => {
   const taskData = info.event.extendedProps
   const showTitle = taskData?.id ? taskData.showTitle : info.event.title
   const isShowTimeText = info.event.allDay === false && dayjs(info.event.end).diff(info.event.start, 'minute') > 50
@@ -27,7 +35,7 @@ const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
     case 'dayGridWeek':
       element = (
         <div
-          className={cn('relative flex w-full cursor-pointer items-center gap-1 px-0.5', {
+          className={cn('group relative flex w-full cursor-pointer items-center gap-1 px-0.5', {
             'line-through opacity-60': isDone,
             'font-semibold': !isDone,
           })}
@@ -39,6 +47,19 @@ const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
           <span className="flex-1 truncate">
             <MathText>{showTitle}</MathText>
           </span>
+          {onEditTask && taskData?.id ? (
+            <button
+              type="button"
+              aria-label="Edit task planning"
+              className="absolute right-0 top-0 hidden h-full items-center bg-inherit px-1 group-hover:flex"
+              onClick={(event) => {
+                event.stopPropagation()
+                onEditTask(taskData as AgendaTaskWithStartOrDeadline)
+              }}
+            >
+              <FiEdit2 />
+            </button>
+          ) : null}
           {isDone ? (
             <IoIosCheckmarkCircle
               className={cn('absolute right-0', info.event.allDay ? 'text-white' : 'text-green-500')}
@@ -56,7 +77,7 @@ const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
       break
     case 'timeGridWeek':
       element = (
-        <div className={cn('relative h-full cursor-pointer', { 'opacity-70': isDone, 'pr-6': isShowDeadline })}>
+        <div className={cn('group relative h-full cursor-pointer', { 'opacity-70': isDone, 'pr-6': isShowDeadline })}>
           <div
             className={cn('truncate', {
               'line-through': isDone,
@@ -66,6 +87,19 @@ const TheCalendarEvent = ({ info }: { info: EventContentArg }) => {
           >
             <MathText>{showTitle}</MathText>
           </div>
+          {onEditTask && taskData?.id ? (
+            <button
+              type="button"
+              aria-label="Edit task planning"
+              className="absolute right-0 top-0 hidden items-center bg-inherit px-1 group-hover:flex"
+              onClick={(event) => {
+                event.stopPropagation()
+                onEditTask(taskData as AgendaTaskWithStartOrDeadline)
+              }}
+            >
+              <FiEdit2 />
+            </button>
+          ) : null}
           {isShowTimeText ? <div className="text-xs text-gray-200">{info.timeText}</div> : null}
           {isDone ? <IoIosCheckmarkCircle className="absolute right-0 top-0.5" /> : null}
           {isShowDeadline ? (

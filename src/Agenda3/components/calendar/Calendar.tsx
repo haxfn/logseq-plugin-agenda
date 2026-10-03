@@ -20,7 +20,7 @@ import { tasksWithStartOrDeadlineAtom } from '@/Agenda3/models/entities/tasks'
 import { logseqAtom } from '@/Agenda3/models/logseq'
 import { settingsAtom } from '@/Agenda3/models/settings'
 // import useTheme from '@/hooks/useTheme'
-import type { AgendaTaskWithStart } from '@/types/task'
+import type { AgendaTaskWithStartOrDeadline } from '@/types/task'
 import { cn } from '@/util/util'
 
 import TaskModal from '../modals/TaskModal'
@@ -63,7 +63,7 @@ const Calendar = ({ onCalendarTitleChange }: CalendarProps, ref) => {
 
   const [editTaskModal, setEditTaskModal] = useState<{
     open: boolean
-    task?: AgendaTaskWithStart
+    task?: AgendaTaskWithStartOrDeadline
   }>({
     open: false,
   })
@@ -78,13 +78,10 @@ const Calendar = ({ onCalendarTitleChange }: CalendarProps, ref) => {
   })
 
   const onEventClick = (info: EventClickArg) => {
-    setEditTaskModal({
-      open: true,
-      task: info.event.extendedProps as AgendaTaskWithStart,
-    })
+    navToLogseqBlock(info.event.extendedProps as AgendaTaskWithStartOrDeadline, currentGraph)
   }
-  const onEventCtrlClick = (info: EventClickArg) => {
-    navToLogseqBlock(info.event.extendedProps as AgendaTaskWithStart, currentGraph)
+  const onEditEventTask = (task: AgendaTaskWithStartOrDeadline) => {
+    setEditTaskModal({ open: true, task })
   }
   const onEventScheduleUpdate = (info: EventResizeDoneArg | EventReceiveArg | EventDropArg) => {
     // const calendarApi = calendarRef.current?.getApi()
@@ -238,11 +235,9 @@ const Calendar = ({ onCalendarTitleChange }: CalendarProps, ref) => {
         }}
         // click event
         eventClick={(info) => {
-          if (info.jsEvent?.ctrlKey) {
-            onEventCtrlClick(info)
-          } else {
-            onEventClick(info)
-          }
+          const target = info.jsEvent?.target
+          if (target instanceof Element && target.closest('[aria-label="Edit task planning"]')) return
+          onEventClick(info)
           track('Calendar: Click Event', { calendarView: info.view.type })
         }}
         select={(info) => {
@@ -252,7 +247,7 @@ const Calendar = ({ onCalendarTitleChange }: CalendarProps, ref) => {
           track('Calendar: Select Event', { calendarView: info.view.type })
           onSelect(info)
         }}
-        eventContent={(info) => <TheCalendarEvent info={info} />}
+        eventContent={(info) => <TheCalendarEvent info={info} onEditTask={onEditEventTask} />}
         views={{
           timeGridWeek: {
             // dayMaxEvents: true,

@@ -19,7 +19,7 @@ import { init as initI18n } from './locales/i18n'
 initI18n()
 
 export type TimeBoxType = 'estimated' | 'actual'
-const Dashboard = () => {
+const Dashboard = ({ embedded = false }: { embedded?: boolean }) => {
   const app = useAtomValue(appAtom)
   // 需要初始化 settings
   const { initializeSettings } = useSettings()
@@ -73,11 +73,14 @@ const Dashboard = () => {
   return (
     <div
       className={cn(
-        `flex h-screen w-screen bg-gray-100 before:pointer-events-none before:absolute before:h-[180px] before:w-[240px]
-        before:bg-gradient-conic before:from-sky-200 before:via-blue-200 before:blur-2xl before:transition-all
-        before:content-[''] dark:bg-zinc-800 before:dark:from-sky-900 before:dark:via-[#0141ff] before:dark:opacity-40`,
+        `relative flex ${
+          embedded ? 'h-full w-full' : 'h-screen w-screen'
+        } bg-gray-100 before:pointer-events-none before:absolute
+        before:h-[180px] before:w-[240px] before:bg-gradient-conic before:from-sky-200 before:via-blue-200 before:blur-2xl
+        before:transition-all before:content-[''] dark:bg-zinc-800 before:dark:from-sky-900 before:dark:via-[#0141ff]
+        before:dark:opacity-40`,
         {
-          'pt-[30px]': import.meta.env.VITE_MODE === 'plugin',
+          'pt-[30px]': import.meta.env.VITE_MODE === 'plugin' && !embedded,
         },
         app.view === 'calendar' ? 'before:left-1/4 before:top-2/3' : 'before:left-1/2 before:top-1/2',
       )}
@@ -86,7 +89,7 @@ const Dashboard = () => {
       {/* <ProjectSidebar className="hidden" /> */}
 
       {/* ========== Multiple View ========= */}
-      <MultipleView className="flex-1" />
+      <MultipleView className="min-h-0 flex-1" embedded={embedded} />
 
       {/* ========== Sidebar ========= */}
       <Sidebar />

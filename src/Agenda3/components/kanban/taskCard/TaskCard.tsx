@@ -51,12 +51,7 @@ const TaskCard = ({ task }: { task: AgendaTaskWithStartOrDeadline }) => {
     updateEntity({ type: 'task-remove-date', id: taskId, data: null })
   }
   const onClickTask = (e: React.MouseEvent, task: AgendaTaskWithStartOrDeadline) => {
-    if (e.ctrlKey) {
-      navToLogseqBlock(task, currentGraph)
-      console.log(task)
-    } else {
-      setEditTaskModal({ open: true, task })
-    }
+    navToLogseqBlock(task, currentGraph)
     e.stopPropagation()
   }
 
@@ -82,6 +77,10 @@ const TaskCard = ({ task }: { task: AgendaTaskWithStartOrDeadline }) => {
         trigger={['contextMenu']}
         menu={{
           items: [
+            {
+              key: 'plan',
+              label: 'Plan task',
+            },
             import.meta.env.DEV
               ? {
                   key: 'console',
@@ -104,6 +103,7 @@ const TaskCard = ({ task }: { task: AgendaTaskWithStartOrDeadline }) => {
             },
           ],
           onClick: ({ key }) => {
+            if (key === 'plan') setEditTaskModal({ open: true, task })
             if (key === 'delete') onDeleteTask(task.id)
             if (key === 'backlog') onRemoveDate(task.id)
             if (key === 'console') console.log(task)
