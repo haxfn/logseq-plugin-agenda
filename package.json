@@ -5,7 +5,8 @@
   "private": true,
   "logseq": {
     "id": "logseq-plugin-agenda",
-    "icon": "logo.png"
+    "icon": "logo.png",
+    "supportsDB": true
   },
   "scripts": {
     "dev": "vite --mode web",
@@ -44,7 +45,7 @@
     "@fullcalendar/rrule": "^6.1.13",
     "@fullcalendar/timegrid": "^6.1.13",
     "@haydenull/use-pomodoro": "^1.1.4",
-    "@logseq/libs": "^0.0.15",
+    "@logseq/libs": "^0.3.2",
     "@radix-ui/react-dialog": "^1.0.4",
     "@radix-ui/react-label": "^2.0.2",
     "@radix-ui/react-popover": "^1.0.6",
