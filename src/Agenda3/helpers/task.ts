@@ -441,19 +441,27 @@ function replacePageReference(text: string) {
  * ((some-id-id)) -> block reference
  */
 async function replaceBlockReference(text: string): Promise<string> {
-  const blockIds = Array.from(text.matchAll(/\(\(([\w-]+)\)\)/g)).map((match) => match[1])
-  const blocks = await Promise.all(
-    blockIds.map((uuid) => {
-      // if not a valid uuid, return null
-      if (!uuid.match(/^[\w-]{31,}$/)) return null
-      return logseq.Editor.getBlock(uuid)
+  const referenceRegex = /\(\(([\w-]+)\)\)|\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/gi
+  const references = Array.from(text.matchAll(referenceRegex), (match) => ({
+    text: match[0],
+    uuid: match[1] ?? match[2],
+  }))
+  const uniqueUuids = [...new Set(references.map(({ uuid }) => uuid))]
+  const resolvedTitles = await Promise.all(
+    uniqueUuids.map(async (uuid) => {
+      const block = await logseq.Editor.getBlock(uuid)
+      const blockTitle = block?.title ?? block?.content
+      if (blockTitle) return [uuid, blockTitle.split('\n')[0]] as const
+
+      const page = await logseq.Editor.getPage(uuid)
+      const pageTitle = page?.originalName ?? page?.title ?? page?.name
+      return pageTitle ? ([uuid, pageTitle] as const) : null
     }),
   )
-  blocks.forEach((block, index) => {
-    if (block?.content) {
-      const firstLine = block.content.split('\n')[0]
-      text = text.replace(`((${blockIds[index]}))`, firstLine)
-    }
+  const titles = new Map(resolvedTitles.filter((entry): entry is readonly [string, string] => entry !== null))
+  references.forEach(({ text: reference, uuid }) => {
+    const title = titles.get(uuid)
+    if (title) text = text.replace(reference, title)
   })
   return text
 }
